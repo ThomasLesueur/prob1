@@ -48,10 +48,24 @@ inf_int::inf_int(int n) {
 
 inf_int::inf_int(const char* str)
 {
-	// to be filled 
-	// 부호 처리 
-	// "100"이 들어왔다면 내부 표현에 맞게 "001"로 변환
-	// ex) "-1053" -> thesign=false, digits="3501", len=4
+	if (strlen(str) == 0) {
+		new (this) inf_int();
+		return;
+	}
+	if ((str[0] != '-') && (str[0] < '0' || str[0] > '9')) {
+		std::cerr << "Error: bad number" << std::endl;
+		exit(84);
+	}
+	this->digits = new char[strlen(str) + 1];
+	strcpy(this->digits, str);
+	std::reverse(this->digits, &this->digits[strlen(this->digits)]);
+	if (this->digits[strlen(this->digits) - 1] == '-') {;
+		this->thesign = false;
+		this->digits[strlen(this->digits) - 1] = '\0';
+	}
+	else
+		this->thesign = true;
+	this->length = strlen(this->digits);
 }
 
 inf_int::inf_int(const inf_int& a) {
@@ -156,8 +170,16 @@ inf_int operator-(const inf_int& a, const inf_int& b)
 
 	c = a;
 	d = b;
-	if ((c.thesign == false && d.thesign == false)) {
+	if (b.thesign == false || d.thesign == false) {
+		d.thesign = true;
+		c = d + c;
+		c.removeZero();
+		return c;
+	}
+	else if (d.thesign == false) {
+		d.thesign = true;
 		c = c + d;
+		c.removeZero();
 		return c;
 	}
 	else if (c < d) {
@@ -165,20 +187,48 @@ inf_int operator-(const inf_int& a, const inf_int& b)
 			d.Sub(c, i);
 		}
 		d.thesign = false;
+		d.removeZero();
 		return d;
 	}
 	else {
 		for (unsigned i = 0; i < c.length; i++) {
 			c.Sub(d, i);
 		}
+		c.removeZero();
 		return c;
 	}
 }
 
-/*inf_int operator*(const inf_int& a, const inf_int& b)
+inf_int operator*(const inf_int& a, const inf_int& b)
 {
-	// to be filled
-*/
+	inf_int c, d, result;
+	std::vector<inf_int> steps;
+	unsigned int mul = 0;
+
+	c = a;
+	d = b;
+
+	if (a > b) {
+		for (unsigned int i = 0; i < b.length; i++) {
+			mul = (int) b.digits[i] - 48;
+			steps.push_back(c.MulStep(mul, i));
+		}
+	}
+	else {
+		for (unsigned int i = 0; i < a.length; i++) {
+			mul = (int) a.digits[i] - 48;
+			steps.push_back(d.MulStep(mul, i));
+		}
+	}
+	for(auto it = std::begin(steps); it != std::end(steps); ++it)
+		result = result + *it;
+	if (a.thesign == b.thesign)
+		result.thesign = true;
+	else
+		result.thesign = false;
+	result.removeZero();
+	return result;
+}
 
 
 std::ostream& operator<<(std::ostream& out, const inf_int& a)
@@ -237,7 +287,6 @@ void inf_int::Sub(inf_int& other, const unsigned int index)
 		other.digits[this->length] = '\0';
 		other.length = this->length;
 	}
-
 	if (this->length < index) {
 		this->digits = (char*)realloc(this->digits, index + 1);
 
@@ -250,14 +299,12 @@ void inf_int::Sub(inf_int& other, const unsigned int index)
 		this->length = index;
 		this->digits[this->length] = '\0';
 	}
-
-	if (this->digits[index - 1] < '0') {
-		this->digits[index - 1] = '0';
+	if (this->digits[index] < '0') {
+		this->digits[index] = '0';
 	}
 
 	a = (int)this->digits[index] - 48;
 	b = (int)other.digits[index] - 48;
-
 	if (other.digits[index] > '9') {
 		b = 10;
 	}
@@ -268,4 +315,48 @@ void inf_int::Sub(inf_int& other, const unsigned int index)
 	}
 	a = a - b;
 	this->digits[index] = a + 48;
+}
+
+void inf_int::removeZero()
+{
+	int zeroCounter = 0;
+
+	for (unsigned int i = this->length - 1; i > 0; i--) {
+		if (this->digits[i] != '0') {
+			break;
+		}
+		if (this->digits[i] == '0') {
+			zeroCounter += 1; 
+		}
+	}
+	if (zeroCounter == this->length)
+		zeroCounter -= 1;
+	this->digits = (char*)realloc(this->digits, this->length - zeroCounter);
+	this->length = this->length - zeroCounter;
+	this->digits[this->length] = '\0';
+}
+
+inf_int inf_int::MulStep(unsigned int mul, unsigned int stepNum)
+{
+	unsigned int holdback = 0;
+	int n, res = 0;
+	inf_int stepResult;
+
+	stepResult.digits = (char*)malloc(sizeof(char) * this->length + stepNum);
+
+	for (unsigned int index = 0; index < stepNum; index++)
+		stepResult.digits[index] = '0';
+
+	for (unsigned int i = 0; i < this->length; i++) {
+		n = (int)this->digits[i] - 48;
+		res = ((n * mul) + holdback) % 10;
+		holdback = ((n * mul) + holdback) / 10;
+		stepResult.digits[i + stepNum] = res + 48;
+		if (this->digits[i+1] == '\0')
+			stepResult.digits[i + 1 + stepNum] = holdback + 48;
+	}
+	stepResult.thesign = true;
+	stepResult.length = strlen(stepResult.digits);
+
+	return stepResult;
 }

@@ -11,7 +11,7 @@ int main()
 	inf_int c;
 
 	c = a - b;
-//	std::cout<< "res:" << c << std::endl;
+	std::cout<< "res:" << c << std::endl;
 
 }
 

@@ -4,6 +4,9 @@
 
 #include <iostream>
 #include <string>
+#include <cstring>
+#include <algorithm>
+#include <vector>
 
 class inf_int
 {
@@ -24,6 +27,9 @@ public:
 
     void Add(const char num, const unsigned int index);
     void Sub(inf_int &other,  const unsigned int index);
+    void Mul(inf_int &a, inf_int &b);
+    void removeZero();
+    inf_int MulStep(const unsigned int mul, const unsigned int stepNum);
 
     inf_int& operator=(const inf_int&); // assignment operator
 
@@ -34,7 +40,7 @@ public:
 
     friend inf_int operator+(const inf_int&, const inf_int&);
     friend inf_int operator-(const inf_int&, const inf_int&);
-    //friend inf_int operator*(const inf_int&, const inf_int&);
+    friend inf_int operator*(const inf_int&, const inf_int&);
     // friend inf_int operator/(const inf_int& , const inf_int&); // not required
 
     friend std::ostream& operator<<(std::ostream&, const inf_int&);
