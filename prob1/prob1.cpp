@@ -6,11 +6,11 @@
 
 int main()
 {
-	inf_int a(100);
-	inf_int b(100);
+	inf_int a("333333333333333333333333");
+	inf_int b("73755");
 	inf_int c;
 
-	c = a - b;
+	c = a * b;
 	std::cout<< "res:" << c << std::endl;
 
 }
